@@ -18,9 +18,10 @@ FROM alpine as final
 
 RUN apk --no-cache add \
     bash
-
+RUN mkdir /api
+WORKDIR "/api"
 # Copy the binaries from the builder image.
 COPY --from=builder /go/bin/naporta-api /bin/naporta-api
-COPY --from=builder /naporta-api/naporta-api.conf /bin/naporta-api.conf
+COPY --from=builder /naporta-api/naporta-api.conf /api/naporta-api.conf
 
-ENTRYPOINT ["./naporta-api"]
+ENTRYPOINT ["naporta-api"]

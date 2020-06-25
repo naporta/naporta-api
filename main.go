@@ -131,7 +131,7 @@ func main() {
 		respondWithJson(w, http.StatusOK, map[string]string{"result": "success"})
 	}).Methods("DELETE")
 
-	if err := http.ListenAndServe(":3000", r); err != nil {
+	if err := http.ListenAndServe("0.0.0.0:3000", r); err != nil {
 		log.Fatal(err)
 	}
 
