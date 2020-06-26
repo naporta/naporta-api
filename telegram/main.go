@@ -3,8 +3,6 @@ package telegram
 import (
 	"fmt"
 	"log"
-	"strconv"
-	"strings"
 
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/naporta/naporta-api/db"
@@ -32,27 +30,6 @@ func Start(token string, mongo db.Connection) {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 			switch update.Message.Command() {
 			case "add":
-				msg.Text = fmt.Sprintf("%v", update.Message)
-				bot.Send(msg)
-				data := strings.Split(update.Message.Text, ",")
-				whatsapp, err := strconv.ParseInt(data[4], 10, 64)
-				bloco, err := strconv.ParseInt(data[6], 10, 64)
-				apt, err := strconv.ParseInt(data[7], 10, 64)
-				if err != nil {
-					log.Println(err)
-				}
-
-				vendedor := db.Vendedor{
-					Empresa:     data[1],
-					Responsavel: data[2],
-					Produtos:    data[3],
-					Whatsapp:    whatsapp,
-					Condominio:  data[5],
-					Bloco:       bloco,
-					Apt:         apt,
-					Pagamento:   data[8],
-				}
-				mongo.Insert(vendedor)
 				msg.Text = "Deu bom pai!"
 				bot.Send(msg)
 			case "listar":

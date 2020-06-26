@@ -11,16 +11,17 @@ import (
 )
 
 type Vendedor struct {
-	ID          primitive.ObjectID `bson:"_id" json:"id"`
-	Condominio  string             `bson:"condominio" json:"condominio"`
-	Empresa     string             `bson:"empresa" json:"empresa"`
-	Responsavel string             `bson:"responsavel" json:"responsavel"`
-	Produtos    string             `bson:"produtos" json:"produtos"`
-	Whatsapp    int64              `bson:"whatsapp" json:"whatsapp"`
-	Bloco       int64              `bson:"bloco" json:"bloco"`
-	Apt         int64              `bson:"apt" json:"apt"`
-	Pagamento   string             `bson:"pagamento" json:"pagamento"`
-	Categoria   string             `bson:"categoria" json:"categoria"`
+	ID         primitive.ObjectID `bson:"_id" json:"id"`
+	Condominio string             `bson:"condominio" json:"condominio"`
+	Nome       string             `bson:"empresa" json:"empresa"`
+	Profissao  string             `bson:"profissao" json:"profissao"`
+	Produtos   []string           `bson:"produtos" json:"produtos"`
+	Whatsapp   int64              `bson:"whatsapp" json:"whatsapp"`
+	Bloco      int64              `bson:"bloco" json:"bloco"`
+	Apt        int64              `bson:"apt" json:"apt"`
+	Pagamento  []string           `bson:"pagamento" json:"pagamento"`
+	Tags       []string           `bson:"tags" json:"tags"`
+	Verificado bool               `bson:"verificado" json:"verificado"`
 }
 
 type Connection struct {
@@ -52,43 +53,48 @@ func (c *Connection) Connect() error {
 	return nil
 }
 
-func (c *Connection) FindAll() ([]Vendedor, error) {
-	ctx := context.TODO()
-
-	collection := c.client.Database(c.Database).Collection("vendedores")
-	var vendedores []Vendedor
-
-	findOptions := options.Find()
-	query, err := collection.Find(ctx, bson.D{{}}, findOptions)
-	if err != nil {
-		return nil, err
-	}
-	defer query.Close(ctx)
-
-	for query.Next(ctx) {
-		var elem Vendedor
-		err := query.Decode(&elem)
-		if err != nil {
-			return nil, err
-		}
-
-		vendedores = append(vendedores, elem)
-	}
-	if err := query.Err(); err != nil {
-		return nil, err
-	}
-
-	return vendedores, nil
-}
-
 func (c *Connection) Insert(v Vendedor) (*mongo.InsertOneResult, error) {
 	ctx := context.TODO()
-	bson, err := bson.Marshal(v)
-	res, err := c.client.Database(c.Database).Collection("vendedores").InsertOne(ctx, bson)
+	novo := bson.M{
+		"condominio": v.Condominio,
+		"nome":       v.Nome,
+		"produtos":   v.Produtos,
+		"whatsapp":   v.Whatsapp,
+		"bloco":      v.Bloco,
+		"apt":        v.Apt,
+		"pagamento":  v.Pagamento,
+		"tags":       v.Tags,
+	}
+	res, err := c.client.Database(c.Database).Collection("vendedores").InsertOne(ctx, novo)
 	if err != nil {
 		return nil, err
 	}
 	return res, nil
+}
+
+func (c *Connection) FindAll() ([]bson.M, error) {
+	ctx := context.TODO()
+
+	collection := c.client.Database(c.Database).Collection("vendedores")
+	var vendedores []bson.M
+
+	result, err := collection.Find(ctx, bson.D{})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = result.All(ctx, &vendedores); err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	defer result.Close(ctx)
+
+	if err := result.Err(); err != nil {
+		return nil, err
+	}
+
+	return vendedores, nil
 }
 
 func (c *Connection) FindByID(id string) (Vendedor, error) {
