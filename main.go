@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -10,7 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/naporta/naporta-api/db"
 	"github.com/naporta/naporta-api/telegram"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var mongo = db.Connection{}
@@ -39,97 +37,15 @@ func init() {
 	go telegram.Start(cfg.TelegramToken, mongo)
 }
 
-func respondWithError(w http.ResponseWriter, code int, msg string) {
-	respondWithJson(w, code, map[string]string{"error": msg})
-}
-
-func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
-	response, _ := json.Marshal(payload)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	w.Write(response)
-}
-
 func main() {
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/vendedor", func(w http.ResponseWriter, r *http.Request) {
-		vendedores, err := mongo.FindAll()
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		respondWithJson(w, http.StatusOK, vendedores)
-	}).Methods("GET")
-
-	r.HandleFunc("/vendedor", func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-		var vendedor db.Vendedor
-		if err := json.NewDecoder(r.Body).Decode(&vendedor); err != nil {
-			respondWithError(w, http.StatusBadRequest, "Invalid request payload")
-			return
-		}
-		res, err := mongo.Insert(vendedor)
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		vendedor.ID = res.InsertedID.(primitive.ObjectID)
-		respondWithJson(w, http.StatusCreated, vendedor)
-	}).Methods("POST")
-
-	r.HandleFunc("/vendedor", func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-		var vendedor db.Vendedor
-
-		if err := json.NewDecoder(r.Body).Decode(&vendedor); err != nil {
-			respondWithError(w, http.StatusBadRequest, "Invalid request payload")
-			return
-		}
-		log.Println(vendedor)
-		res, err := mongo.Update(vendedor)
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		log.Printf("%+v\n", res)
-		if res.MatchedCount < 1 {
-			respondWithJson(w, http.StatusOK, map[string]string{"status": "no op"})
-			return
-		}
-
-		respondWithJson(w, http.StatusOK, map[string]string{"result": "success"})
-	}).Methods("PUT")
-
-	r.HandleFunc("/vendedor/{id}", func(w http.ResponseWriter, r *http.Request) {
-		params := mux.Vars(r)
-		movie, err := mongo.FindByID(params["id"])
-		if err != nil {
-			respondWithError(w, http.StatusBadRequest, "Invalid Vendedor ID")
-			return
-		}
-		respondWithJson(w, http.StatusOK, movie)
-	}).Methods("GET")
-
-	r.HandleFunc("/vendedor", func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-		var vendedor db.Vendedor
-		if err := json.NewDecoder(r.Body).Decode(&vendedor); err != nil {
-			respondWithError(w, http.StatusBadRequest, "Invalid request payload")
-			return
-		}
-		res, err := mongo.Delete(vendedor)
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		if res.DeletedCount < 1 {
-			respondWithJson(w, http.StatusOK, map[string]string{"result": "no op"})
-			return
-		}
-		respondWithJson(w, http.StatusOK, map[string]string{"result": "success"})
-	}).Methods("DELETE")
+	r.HandleFunc("/vendedor", listVendedores).Methods("GET")
+	r.HandleFunc("/vendedor", insertRawVendedor).Methods("POST")
+	//r.HandleFunc("/vendedor", updateVendedor).Methods("PUT")
+	r.HandleFunc("/vendedor/{id}", getVendedorByID).Methods("GET")
+	//r.HandleFunc("/vendedor", deleteVendedor).Methods("DELETE")
 
 	if err := http.ListenAndServe("0.0.0.0:3000", r); err != nil {
 		log.Fatal(err)

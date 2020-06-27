@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -22,6 +23,8 @@ type Vendedor struct {
 	Pagamento  []string           `bson:"pagamento" json:"pagamento"`
 	Tags       []string           `bson:"tags" json:"tags"`
 	Verificado bool               `bson:"verificado" json:"verificado"`
+	Assinante  bool               `bson:"assinante" json:"assinante"`
+	Assinatura *time.Time         `bson:"assinatura" json:assinatura"`
 }
 
 type Connection struct {
@@ -64,6 +67,9 @@ func (c *Connection) Insert(v Vendedor) (*mongo.InsertOneResult, error) {
 		"apt":        v.Apt,
 		"pagamento":  v.Pagamento,
 		"tags":       v.Tags,
+		"verificado": v.Verificado,
+		"assinante":  v.Assinante,
+		"assinatura": v.Assinatura,
 	}
 	res, err := c.client.Database(c.Database).Collection("vendedores").InsertOne(ctx, novo)
 	if err != nil {
