@@ -41,6 +41,7 @@ func main() {
 
 	r := mux.NewRouter()
 
+	r.HandleFunc("/vendedor", listVendedores).Queries("c", "{c}").Methods("GET")
 	r.HandleFunc("/vendedor", listVendedores).Methods("GET")
 	r.HandleFunc("/vendedor", insertRawVendedor).Methods("POST")
 	//r.HandleFunc("/vendedor", updateVendedor).Methods("PUT")

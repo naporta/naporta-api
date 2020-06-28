@@ -14,17 +14,20 @@ import (
 type Vendedor struct {
 	ID         primitive.ObjectID `bson:"_id" json:"id"`
 	Condominio string             `bson:"condominio" json:"condominio"`
-	Nome       string             `bson:"empresa" json:"empresa"`
+	Nome       string             `bson:"nome" json:"nome"`
+	Empresa    string             `bson:"empresa" json:"empresa"`
 	Profissao  string             `bson:"profissao" json:"profissao"`
 	Produtos   []string           `bson:"produtos" json:"produtos"`
 	Whatsapp   int64              `bson:"whatsapp" json:"whatsapp"`
+	Facebook   string             `bson:"facebook" json:"facebook"`
+	Instagram  string             `bson:"instagram" json:"instagram"`
 	Bloco      int64              `bson:"bloco" json:"bloco"`
 	Apt        int64              `bson:"apt" json:"apt"`
 	Pagamento  []string           `bson:"pagamento" json:"pagamento"`
 	Tags       []string           `bson:"tags" json:"tags"`
 	Verificado bool               `bson:"verificado" json:"verificado"`
 	Assinante  bool               `bson:"assinante" json:"assinante"`
-	Assinatura *time.Time         `bson:"assinatura" json:assinatura"`
+	Assinatura *time.Time         `bson:"assinatura" json:"assinatura"`
 }
 
 type Connection struct {
@@ -78,19 +81,31 @@ func (c *Connection) Insert(v Vendedor) (*mongo.InsertOneResult, error) {
 	return res, nil
 }
 
-func (c *Connection) FindAll() ([]bson.M, error) {
+func (c *Connection) FindAll(condominio string) ([]bson.M, error) {
 	ctx := context.TODO()
 
 	collection := c.client.Database(c.Database).Collection("vendedores")
 	var vendedores []bson.M
 
-	result, err := collection.Find(ctx, bson.D{})
+	var query bson.D
+	if condominio != "" {
+		query = bson.D{{"verificado", true}, {"condominio", condominio}}
+	} else {
+		query = bson.D{{"verificado", true}}
+	}
+
+	filter := options.Find()
+	filter.SetProjection(bson.M{
+		"_id":        0,
+		"verificado": 0,
+		"assinante":  0,
+		"assinatura": 0,
+	})
+	result, err := collection.Find(ctx, query, filter)
 	if err != nil {
 		return nil, err
 	}
-
 	if err = result.All(ctx, &vendedores); err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 

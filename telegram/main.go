@@ -33,7 +33,7 @@ func Start(token string, mongo db.Connection) {
 				msg.Text = "Deu bom pai!"
 				bot.Send(msg)
 			case "listar":
-				vendedores, err := mongo.FindAll()
+				vendedores, err := mongo.FindAll("")
 				if err != nil {
 					log.Printf("Errou: %s", err)
 					continue

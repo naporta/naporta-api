@@ -5,10 +5,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/naporta/naporta-api/db"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
 	"github.com/gorilla/mux"
+	"github.com/naporta/naporta-api/db"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func respondWithError(w http.ResponseWriter, code int, msg string) {
@@ -23,7 +23,8 @@ func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 }
 
 func listVendedores(w http.ResponseWriter, r *http.Request) {
-	vendedores, err := mongo.FindAll()
+	condominio := mux.Vars(r)["c"]
+	vendedores, err := mongo.FindAll(condominio)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -84,7 +85,26 @@ func getVendedorByID(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Invalid Vendedor ID")
 		return
 	}
-	respondWithJson(w, http.StatusOK, vendedor)
+
+	result := bson.M{
+		"id":         vendedor.ID,
+		"condominio": vendedor.Condominio,
+		"nome":       vendedor.Nome,
+		"empresa":    vendedor.Empresa,
+		"profissao":  vendedor.Profissao,
+		"whastapp":   vendedor.Whatsapp,
+		"facebook":   vendedor.Facebook,
+		"instagram":  vendedor.Instagram,
+		"bloco":      vendedor.Bloco,
+		"apt":        vendedor.Apt,
+		"pagamento":  vendedor.Pagamento,
+	}
+
+	respondWithJson(
+		w,
+		http.StatusOK,
+		result,
+	)
 }
 
 func deleteVendedor(w http.ResponseWriter, r *http.Request) {
