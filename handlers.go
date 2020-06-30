@@ -32,6 +32,24 @@ func listVendedores(w http.ResponseWriter, r *http.Request) {
 	respondWithJson(w, http.StatusOK, vendedores)
 }
 
+func listTags(w http.ResponseWriter, r *http.Request) {
+	tags, err := mongo.GetTags()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondWithJson(w, http.StatusOK, tags)
+}
+
+func listProdutos(w http.ResponseWriter, r *http.Request) {
+	tags, err := mongo.GetProdutos()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondWithJson(w, http.StatusOK, tags)
+}
+
 func insertRawVendedor(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	var vendedor db.Vendedor
@@ -114,7 +132,7 @@ func deleteVendedor(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	res, err := mongo.Delete(vendedor)
+	res, err := mongo.Delete(vendedor.ID)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return

@@ -34,7 +34,7 @@ func init() {
 	}
 	log.Println("Connected to the database")
 
-	go telegram.Start(cfg.TelegramToken, mongo)
+	go telegram.Start(cfg.TelegramToken, cfg.Admin, mongo)
 }
 
 func main() {
@@ -43,6 +43,8 @@ func main() {
 
 	r.HandleFunc("/vendedor", listVendedores).Queries("c", "{c}").Methods("GET")
 	r.HandleFunc("/vendedor", listVendedores).Methods("GET")
+	r.HandleFunc("/tags", listTags).Methods("GET")
+	r.HandleFunc("/produtos", listProdutos).Methods("GET")
 	r.HandleFunc("/vendedor", insertRawVendedor).Methods("POST")
 	//r.HandleFunc("/vendedor", updateVendedor).Methods("PUT")
 	r.HandleFunc("/vendedor/{id}", getVendedorByID).Methods("GET")

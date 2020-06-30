@@ -3,32 +3,12 @@ package db
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-type Vendedor struct {
-	ID         primitive.ObjectID `bson:"_id" json:"id"`
-	Condominio string             `bson:"condominio" json:"condominio"`
-	Nome       string             `bson:"nome" json:"nome"`
-	Empresa    string             `bson:"empresa" json:"empresa"`
-	Profissao  string             `bson:"profissao" json:"profissao"`
-	Produtos   []string           `bson:"produtos" json:"produtos"`
-	Whatsapp   int64              `bson:"whatsapp" json:"whatsapp"`
-	Facebook   string             `bson:"facebook" json:"facebook"`
-	Instagram  string             `bson:"instagram" json:"instagram"`
-	Bloco      int64              `bson:"bloco" json:"bloco"`
-	Apt        int64              `bson:"apt" json:"apt"`
-	Pagamento  []string           `bson:"pagamento" json:"pagamento"`
-	Tags       []string           `bson:"tags" json:"tags"`
-	Verificado bool               `bson:"verificado" json:"verificado"`
-	Assinante  bool               `bson:"assinante" json:"assinante"`
-	Assinatura *time.Time         `bson:"assinatura" json:"assinatura"`
-}
 
 type Connection struct {
 	User     string
@@ -89,9 +69,14 @@ func (c *Connection) FindAll(condominio string) ([]bson.M, error) {
 
 	var query bson.D
 	if condominio != "" {
-		query = bson.D{{"verificado", true}, {"condominio", condominio}}
+		query = bson.D{
+			primitive.E{Key: "verificado", Value: true},
+			primitive.E{Key: "condominio", Value: condominio},
+		}
 	} else {
-		query = bson.D{{"verificado", true}}
+		query = bson.D{
+			primitive.E{Key: "verificado", Value: true},
+		}
 	}
 
 	filter := options.Find()
@@ -126,7 +111,7 @@ func (c *Connection) FindByID(id string) (Vendedor, error) {
 		return Vendedor{}, err
 	}
 
-	filter := bson.D{{"_id", objID}}
+	filter := bson.D{primitive.E{Key: "_id", Value: objID}}
 
 	err = c.client.Database(c.Database).Collection("vendedores").FindOne(ctx, filter).Decode(&result)
 	if err != nil {
@@ -136,9 +121,88 @@ func (c *Connection) FindByID(id string) (Vendedor, error) {
 	return result, nil
 }
 
-func (c *Connection) Delete(v Vendedor) (*mongo.DeleteResult, error) {
+func (c *Connection) FindOneFalse(condominio string) (Vendedor, error) {
 	ctx := context.TODO()
-	filter := bson.D{{"_id", v.ID}}
+	var result Vendedor
+
+	var query bson.D
+	if condominio != "" {
+		query = bson.D{
+			primitive.E{Key: "verificado", Value: false},
+			primitive.E{Key: "condominio", Value: condominio},
+		}
+	} else {
+		query = bson.D{primitive.E{Key: "verificado", Value: false}}
+	}
+	err := c.client.Database(c.Database).Collection("vendedores").FindOne(ctx, query).Decode(&result)
+	if err != nil {
+		return Vendedor{}, err
+	}
+
+	return result, nil
+}
+
+func (c *Connection) GetTags() (bson.M, error) {
+	ctx := context.TODO()
+
+	collection := c.client.Database(c.Database).Collection("vendedores")
+	var tags []bson.M
+
+	aggr := []bson.M{
+		{"$unwind": "$tags"},
+		{"$group": bson.M{"_id": 0, "tags": bson.M{"$addToSet": "$tags"}}},
+		{"$project": bson.M{"_id": 0}},
+	}
+
+	result, err := collection.Aggregate(ctx, aggr)
+	if err != nil {
+		return nil, err
+	}
+	if err = result.All(ctx, &tags); err != nil {
+		return nil, err
+	}
+
+	defer result.Close(ctx)
+
+	if err := result.Err(); err != nil {
+		return nil, err
+	}
+
+	return tags[0], nil
+}
+
+func (c *Connection) GetProdutos() (bson.M, error) {
+	ctx := context.TODO()
+
+	collection := c.client.Database(c.Database).Collection("vendedores")
+	var tags []bson.M
+
+	aggr := []bson.M{
+		{"$unwind": "$produtos"},
+		{"$group": bson.M{"_id": 0, "produtos": bson.M{"$addToSet": "$produtos"}}},
+		{"$project": bson.M{"_id": 0}},
+	}
+
+	result, err := collection.Aggregate(ctx, aggr)
+	if err != nil {
+		return nil, err
+	}
+	if err = result.All(ctx, &tags); err != nil {
+		return nil, err
+	}
+
+	defer result.Close(ctx)
+
+	if err := result.Err(); err != nil {
+		return nil, err
+	}
+
+	return tags[0], nil
+}
+
+func (c *Connection) Delete(id primitive.ObjectID) (*mongo.DeleteResult, error) {
+	ctx := context.TODO()
+	filter := bson.D{primitive.E{Key: "_id", Value: id}}
 	res, err := c.client.Database(c.Database).Collection("vendedores").DeleteOne(
 		ctx,
 		filter,
@@ -152,14 +216,28 @@ func (c *Connection) Delete(v Vendedor) (*mongo.DeleteResult, error) {
 func (c *Connection) Update(v Vendedor) (*mongo.UpdateResult, error) {
 	ctx := context.TODO()
 
-	filter := bson.D{{"_id", v.ID}}
+	filter := bson.D{primitive.E{Key: "_id", Value: v.ID}}
 
 	newData, err := bson.Marshal(v)
 	if err != nil {
 		return nil, err
 	}
 
-	update := bson.D{{"$set", newData}}
+	update := bson.D{primitive.E{Key: "$set", Value: newData}}
+
+	res, err := c.client.Database(c.Database).Collection("vendedores").UpdateOne(ctx, filter, update)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (c *Connection) UpdateVerificado(id primitive.ObjectID) (*mongo.UpdateResult, error) {
+	ctx := context.TODO()
+
+	filter := bson.D{primitive.E{Key: "_id", Value: id}}
+
+	update := bson.M{"$set": bson.M{"verificado": true}}
 
 	res, err := c.client.Database(c.Database).Collection("vendedores").UpdateOne(ctx, filter, update)
 	if err != nil {
