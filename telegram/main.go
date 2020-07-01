@@ -69,10 +69,11 @@ func Start(token string, admins []int, mongo db.Connection) {
 				msg.Text = "digite `rm` para remover, `yes` para autorizar e `no` para deixar como esta."
 				bot.Send(msg)
 			case "listar":
-				vendedores, err := mongo.FindAll("")
+				vendedores, err := mongo.FindAll("", "")
 				if err != nil {
 					log.Printf("Error: %s", err)
 					msg.Text = err.Error()
+					bot.Send(msg)
 					continue
 				}
 				pretty, _ := json.MarshalIndent(vendedores, "", "  ")

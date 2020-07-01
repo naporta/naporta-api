@@ -19,6 +19,7 @@ type Vendedor struct {
 	Bloco      int64              `bson:"bloco" json:"bloco"`
 	Apt        int64              `bson:"apt" json:"apt"`
 	Pagamento  []string           `bson:"pagamento" json:"pagamento"`
+	Categoria  string             `bson:"categoria" json:"categoria"`
 	Tags       []string           `bson:"tags" json:"tags"`
 	Verificado bool               `bson:"verificado" json:"verificado"`
 	Assinante  bool               `bson:"assinante" json:"assinante"`

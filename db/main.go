@@ -49,6 +49,7 @@ func (c *Connection) Insert(v Vendedor) (*mongo.InsertOneResult, error) {
 		"bloco":      v.Bloco,
 		"apt":        v.Apt,
 		"pagamento":  v.Pagamento,
+		"categoria":  v.Categoria,
 		"tags":       v.Tags,
 		"verificado": v.Verificado,
 		"assinante":  v.Assinante,
@@ -61,7 +62,7 @@ func (c *Connection) Insert(v Vendedor) (*mongo.InsertOneResult, error) {
 	return res, nil
 }
 
-func (c *Connection) FindAll(condominio string) ([]bson.M, error) {
+func (c *Connection) FindAll(condominio string, categoria string) ([]bson.M, error) {
 	ctx := context.TODO()
 
 	collection := c.client.Database(c.Database).Collection("vendedores")
@@ -72,6 +73,7 @@ func (c *Connection) FindAll(condominio string) ([]bson.M, error) {
 		query = bson.D{
 			primitive.E{Key: "verificado", Value: true},
 			primitive.E{Key: "condominio", Value: condominio},
+			primitive.E{Key: "categoria", Value: categoria},
 		}
 	} else {
 		query = bson.D{
@@ -200,6 +202,34 @@ func (c *Connection) GetProdutos() (bson.M, error) {
 	return tags[0], nil
 }
 
+func (c *Connection) GetCategorias() (bson.M, error) {
+	ctx := context.TODO()
+
+	collection := c.client.Database(c.Database).Collection("vendedores")
+	var cat []bson.M
+
+	aggr := []bson.M{
+		{"$unwind": "$categoria"},
+		{"$group": bson.M{"_id": 0, "categoria": bson.M{"$addToSet": "$categoria"}}},
+		{"$project": bson.M{"_id": 0}},
+	}
+
+	result, err := collection.Aggregate(ctx, aggr)
+	if err != nil {
+		return nil, err
+	}
+	if err = result.All(ctx, &cat); err != nil {
+		return nil, err
+	}
+
+	defer result.Close(ctx)
+
+	if err := result.Err(); err != nil {
+		return nil, err
+	}
+
+	return cat[0], nil
+}
 func (c *Connection) Delete(id primitive.ObjectID) (*mongo.DeleteResult, error) {
 	ctx := context.TODO()
 	filter := bson.D{primitive.E{Key: "_id", Value: id}}

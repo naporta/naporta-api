@@ -23,9 +23,9 @@ func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 }
 
 func listVendedores(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	condominio := mux.Vars(r)["c"]
-	vendedores, err := mongo.FindAll(condominio)
+	categoria := mux.Vars(r)["cat"]
+	vendedores, err := mongo.FindAll(condominio, categoria)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -34,7 +34,6 @@ func listVendedores(w http.ResponseWriter, r *http.Request) {
 }
 
 func listTags(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	tags, err := mongo.GetTags()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
@@ -43,8 +42,16 @@ func listTags(w http.ResponseWriter, r *http.Request) {
 	respondWithJson(w, http.StatusOK, tags)
 }
 
+func listCategorias(w http.ResponseWriter, r *http.Request) {
+	tags, err := mongo.GetCategorias()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondWithJson(w, http.StatusOK, tags)
+}
+
 func listProdutos(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	tags, err := mongo.GetProdutos()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
@@ -54,7 +61,6 @@ func listProdutos(w http.ResponseWriter, r *http.Request) {
 }
 
 func insertRawVendedor(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	defer r.Body.Close()
 	var vendedor db.Vendedor
 	if err := json.NewDecoder(r.Body).Decode(&vendedor); err != nil {
@@ -78,7 +84,6 @@ func insertRawVendedor(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateVendedor(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	defer r.Body.Close()
 	var vendedor db.Vendedor
 
@@ -102,7 +107,6 @@ func updateVendedor(w http.ResponseWriter, r *http.Request) {
 }
 
 func getVendedorByID(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	params := mux.Vars(r)
 	vendedor, err := mongo.FindByID(params["id"])
 	if err != nil {
@@ -132,7 +136,6 @@ func getVendedorByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteVendedor(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	defer r.Body.Close()
 	var vendedor db.Vendedor
 	if err := json.NewDecoder(r.Body).Decode(&vendedor); err != nil {
