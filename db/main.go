@@ -73,7 +73,7 @@ func (c *Connection) FindAll(condominio string, categoria string) ([]bson.M, err
 		query = bson.D{
 			primitive.E{Key: "verificado", Value: true},
 			primitive.E{Key: "condominio", Value: condominio},
-			primitive.E{Key: "categoria", Value: categoria},
+			primitive.E{Key: "tags", Value: categoria},
 		}
 	} else {
 		query = bson.D{
