@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/naporta/naporta-api/db"
 	"github.com/naporta/naporta-api/telegram"
+	"github.com/rs/cors"
 )
 
 var mongo = db.Connection{}
@@ -51,7 +52,17 @@ func main() {
 	r.HandleFunc("/vendedor/{id}", getVendedorByID).Methods("GET")
 	//r.HandleFunc("/vendedor", deleteVendedor).Methods("DELETE")
 
-	if err := http.ListenAndServe("0.0.0.0:3000", r); err != nil {
+	handler := cors.Default().Handler(r)
+	co := cors.New(cors.Options{
+		AllowedOrigins: []string{
+			"https://nautilus.nporta.com.br/",
+			"https://toplife.nporta.com.br/",
+			"*",
+		},
+	})
+
+	handler = co.Handler(handler)
+	if err := http.ListenAndServe("0.0.0.0:3000", handler); err != nil {
 		log.Fatal(err)
 	}
 
