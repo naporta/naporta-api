@@ -44,8 +44,12 @@ func (c *Connection) Insert(v Vendedor) (*mongo.InsertOneResult, error) {
 	novo := bson.M{
 		"condominio": v.Condominio,
 		"nome":       v.Nome,
+		"empressa":   v.Empresa,
+		"profissao":  v.Profissao,
 		"produtos":   v.Produtos,
 		"whatsapp":   v.Whatsapp,
+		"facebook":   v.Facebook,
+		"instagram":  v.Instagram,
 		"bloco":      v.Bloco,
 		"apt":        v.Apt,
 		"pagamento":  v.Pagamento,
