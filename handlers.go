@@ -34,7 +34,8 @@ func listVendedores(w http.ResponseWriter, r *http.Request) {
 }
 
 func listTags(w http.ResponseWriter, r *http.Request) {
-	tags, err := mongo.GetTags()
+	condominio := mux.Vars(r)["c"]
+	tags, err := mongo.GetTags(condominio)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return

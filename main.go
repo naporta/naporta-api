@@ -44,7 +44,7 @@ func main() {
 
 	r.HandleFunc("/vendedor", listVendedores).Queries("c", "{c}", "cat", "{cat}").Methods("GET")
 	r.HandleFunc("/vendedor", listVendedores).Methods("GET")
-	r.HandleFunc("/tags", listTags).Methods("GET")
+	r.HandleFunc("/tags", listTags).Queries("c", "{c}").Methods("GET")
 	r.HandleFunc("/produtos", listProdutos).Methods("GET")
 	r.HandleFunc("/categorias", listCategorias).Methods("GET")
 	r.HandleFunc("/vendedor", insertRawVendedor).Methods("POST")

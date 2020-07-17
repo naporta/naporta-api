@@ -144,13 +144,14 @@ func (c *Connection) FindOneFalse(condominio string) (Vendedor, error) {
 	return result, nil
 }
 
-func (c *Connection) GetTags() (bson.M, error) {
+func (c *Connection) GetTags(condominio string) (bson.M, error) {
 	ctx := context.TODO()
 
 	collection := c.client.Database(c.Database).Collection("vendedores")
 	var tags []bson.M
 
 	aggr := []bson.M{
+		{"$match": bson.M{"condominio": condominio}},
 		{"$unwind": "$tags"},
 		{"$group": bson.M{"_id": 0, "tags": bson.M{"$addToSet": "$tags"}}},
 		{"$project": bson.M{"_id": 0}},
